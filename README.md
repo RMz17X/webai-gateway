@@ -52,18 +52,9 @@ Includes full Microsoft Bing search scraping endpoints (Web, Image, and Reverse 
 
 ### 1. Prerequisites
 - Node.js >= 20
-- Google Chrome or Chromium (if using the Duck.ai engine)
+- *(Optional)* Google Chrome, Chromium, or Brave installed. If none is installed, the gateway will **automatically download a standalone Chrome build** via `@puppeteer/browsers` on first run!
 
-### 2. Start Chrome with CDP Enabled (Required for Duck.ai)
-```bash
-google-chrome-stable \
-  --remote-debugging-port=9222 \
-  --user-data-dir=/tmp/chrome-cdp-profile \
-  --no-first-run \
-  https://duck.ai/ &
-```
-
-### 3. Installation & Setup
+### 2. Installation & Setup
 ```bash
 git clone https://github.com/RMz17X/webai-gateway.git
 cd webai-gateway
@@ -73,13 +64,18 @@ cp .env.example .env
 # Edit .env to set PORT, optional API_KEY, or PROXY_URL
 ```
 
-### 4. Run the Server
+### 3. Run the Server
 ```bash
-# Production server
+# Production server (automatically detects/downloads browser and launches CDP bridge on-demand)
 npm start
 
 # Development mode with hot reload
 npm run dev
+```
+
+*Note: If you run in a headless Linux environment (e.g. VPS without desktop), wrap with Xvfb for optimal anti-bot bypass:*
+```bash
+xvfb-run -a npm start
 ```
 
 ---

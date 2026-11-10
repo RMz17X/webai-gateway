@@ -20,6 +20,7 @@
 // claude-haiku-5-5, ...) can be selected without touching fragile dropdowns.
 
 import http from "node:http";
+import { ensureBrowser } from "./browser.js";
 
 const CDP_URL = process.env.CDP_URL || "http://127.0.0.1:9222";
 const DUCK_URL = "https://duck.ai/";
@@ -606,11 +607,13 @@ export async function* askDuckStream(prompt, options = {}) {
 
 async function* runDuckStream(prompt, options, model, timeoutMs) {
   if (!(await cdpAvailable())) {
-    throw new Error(
-      "Duck.ai bridge unavailable: Chrome CDP endpoint " +
-        CDP_URL +
-        " is not reachable. Start Chrome with --remote-debugging-port=9222."
-    );
+    try {
+      await ensureBrowser();
+    } catch (err) {
+      throw new Error(
+        `Duck.ai bridge unavailable: failed to connect or auto-launch browser CDP (${CDP_URL}): ${err.message}`
+      );
+    }
   }
 
   // A fresh page guarantees no foreign fetch hook can override our model.
@@ -868,14 +871,21 @@ export async function askDuck(prompt, options = {}) {
 export async function duckHealth() {
   const available = await cdpAvailable();
   if (!available) {
-    return { ok: false, reason: `CDP ${CDP_URL} unreachable` };
+    return {
+      ok: true,
+      mode: "on-demand",
+      reason: `Browser CDP idle (will auto-launch on first chat request)`,
+      cdpUrl: CDP_URL,
+      models: DUCK_SUPPORTED_MODELS.map((m) => m.id)
+    };
   }
   try {
     const tabs = await listTabs();
     const tab = tabs.find((t) => t.type === "page" && t.url?.includes("duck.ai"));
     return {
-      ok: Boolean(tab),
-      reason: tab ? "duck.ai tab attached" : "no duck.ai tab open",
+      ok: true,
+      mode: "attached",
+      reason: tab ? "duck.ai tab attached" : "browser running, duck.ai ready",
       cdpUrl: CDP_URL,
       models: DUCK_SUPPORTED_MODELS.map((m) => m.id)
     };
